@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Autenticación JWT</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #1e1e1e; color: #fff; padding: 20px; }
+        .container { background: #2d2d2d; padding: 20px; border-radius: 8px; max-width: 500px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        button { padding: 10px; margin-top: 10px; width: 100%; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; }
+        .btn-login { background: #4CAF50; color: white; }
+        .btn-login:hover { background: #45a049; }
+        .btn-admin { background: #008CBA; color: white; }
+        .btn-admin:hover { background: #007bb5; }
+        .btn-error { background: #f44336; color: white; }
+        .btn-error:hover { background: #da190b; }
+        pre { background: #111; padding: 15px; border-radius: 4px; color: #0f0; white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Simulador de API con JWT</h2>
+        
+        <button id="btnLogin" class="btn-login">1. Iniciar Sesión (Generar Token)</button>
+        <button id="btnAdmin" class="btn-admin">2. Acceder a Panel (Enviar Token)</button>
+        <button id="btnAdminNoToken" class="btn-error">3. Acceder a Panel (SIN Token)</button>
+
+        <h3>Consola de Respuesta:</h3>
+        <pre id="resultado">Esperando acción...</pre>
+        
+        <h3>Token JWT Actual:</h3>
+        <pre id="tokenDisplay" style="color: #ff9800; font-size: 12px;">Ninguno</pre>
+    </div>
+
+    <script>
+        let jwtToken = '';
+
+        // 1. Botón de Login (Obtiene el Token)
+        document.getElementById('btnLogin').addEventListener('click', async () => {
+            const response = await fetch('/login', { method: 'POST' });
+            const data = await response.json();
+            jwtToken = data.token; // Guardamos el token en memoria
+            document.getElementById('tokenDisplay').innerText = jwtToken;
+            document.getElementById('resultado').innerText = "¡Login exitoso! Se ha generado el token JWT.";
+        });
+
+        // 2. Botón de Acceso Protegido (Envía el Token en la cabecera)
+        document.getElementById('btnAdmin').addEventListener('click', async () => {
+            if (!jwtToken) {
+                document.getElementById('resultado').innerText = "Error local: Primero debes iniciar sesión para tener un token.";
+                return;
+            }
+            const response = await fetch('/api/admin', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken // Aquí inyectamos el token
+                }
+            });
+            const data = await response.json();
+            document.getElementById('resultado').innerText = JSON.stringify(data, null, 2);
+        });
+
+        // 3. Botón de Acceso Denegado (No envía token intencionalmente)
+        document.getElementById('btnAdminNoToken').addEventListener('click', async () => {
+            const response = await fetch('/api/admin', { method: 'GET' }); // Petición sin headers
+            const data = await response.json();
+            document.getElementById('resultado').innerText = `HTTP ${response.status}\n${JSON.stringify(data, null, 2)}`;
+        });
+    </script>
+</body>
+</html>
